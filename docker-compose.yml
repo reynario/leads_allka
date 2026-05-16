@@ -1,28 +1,41 @@
+version: "3.9"
+
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        INSTALL_PLAYWRIGHT: "false"
-    image: sistema-leads-allka:latest
-    container_name: leads-allka
-    restart: unless-stopped
-    env_file:
-      - .env
+  leads-allka:
+    image: ghcr.io/reynario/leads_allka:latest
+    environment:
+      DATABASE_URL: "${DATABASE_URL}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      OPENAI_MODEL: "${OPENAI_MODEL:-gpt-4o-mini}"
+      META_ACCESS_TOKEN: "${META_ACCESS_TOKEN}"
+      APIFY_TOKEN: "${APIFY_TOKEN}"
+      APIFY_INSTAGRAM_ACTOR: "${APIFY_INSTAGRAM_ACTOR:-apify/instagram-profile-scraper}"
+      REDRIVE_API_TOKEN: "${REDRIVE_API_TOKEN}"
+      REDRIVE_BASE_URL: "${REDRIVE_BASE_URL:-https://api.redrive.com.br}"
+      BITRIX_WEBHOOK_URL: "${BITRIX_WEBHOOK_URL}"
+      BITRIX_SOURCE_ID: "${BITRIX_SOURCE_ID:-REDRIVE_IA}"
+      ADMIN_TOKEN: "${ADMIN_TOKEN}"
+      SCHEDULER_ENABLED: "${SCHEDULER_ENABLED:-true}"
+      PLAYWRIGHT_ENABLED: "${PLAYWRIGHT_ENABLED:-false}"
+      GOOGLE_ADS_ENABLED: "${GOOGLE_ADS_ENABLED:-false}"
+      DAILY_LEAD_BATCH_SIZE: "${DAILY_LEAD_BATCH_SIZE:-20}"
+      DAILY_JOB_HOUR: "${DAILY_JOB_HOUR:-8}"
+      DAILY_JOB_MINUTE: "${DAILY_JOB_MINUTE:-0}"
+      MAX_RETRY_COUNT: "${MAX_RETRY_COUNT:-3}"
+      TZ: "${TZ:-America/Sao_Paulo}"
     networks:
-      - traefik_proxy
-      - default
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=${TRAEFIK_NETWORK:-traefik_proxy}"
-      - "traefik.http.routers.leads-allka.rule=Host(`${APP_DOMAIN}`)"
-      - "traefik.http.routers.leads-allka.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
-      - "traefik.http.routers.leads-allka.tls=true"
-      - "traefik.http.routers.leads-allka.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
-      - "traefik.http.services.leads-allka.loadbalancer.server.port=8000"
+      - RNNet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.leads-allka.rule=Host(`allkaleads.rndigitalmidia.com.br`)"
+        - "traefik.http.routers.leads-allka.entrypoints=websecure"
+        - "traefik.http.routers.leads-allka.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.leads-allka.loadbalancer.server.port=8000"
 
 networks:
-  traefik_proxy:
+  RNNet:
     external: true
-    name: ${TRAEFIK_NETWORK:-traefik_proxy}

@@ -83,22 +83,33 @@ uvicorn app.main:app --reload
 
 Sanity: `curl http://localhost:8000/health` deve retornar `{"status":"ok","database":"ok"}`.
 
-## Rodar produção (VPS com Traefik)
+## Rodar produção (VPS com Portainer + Traefik Swarm)
 
-Pré-requisito na VPS: rede Docker externa do Traefik (default `traefik_proxy`) já criada e
-um certresolver Let's Encrypt configurado (default `letsencrypt`).
+A imagem é publicada automaticamente em `ghcr.io/reynario/leads_allka:latest`
+sempre que há push na branch `main` (veja `.github/workflows/build.yml`).
 
-```bash
-git clone https://github.com/reynario/leads_allka.git
-cd leads_allka
-cp .env.example .env
-nano .env                    # preencher tokens reais
-docker compose up -d --build
-docker compose logs -f app
-```
+Pré-requisitos na VPS:
+- Docker Swarm inicializado (`docker swarm init` se ainda não estiver).
+- Traefik rodando em modo Swarm com `certresolver: letsencryptresolver`.
+- Rede overlay externa **`RNNet`** já criada.
+- DNS de `allkaleads.rndigitalmidia.com.br` apontando para a VPS.
 
-A primeira execução roda `alembic upgrade head`, que cria o **schema `leads`** com as tabelas
-`leads.leads` e `leads.lead_analysis` (sem mexer no schema `public` do Supabase compartilhado).
+**Deploy via Portainer (Stacks):**
+
+1. **Portainer → Stacks → Add stack**.
+2. Nome: `leads-allka`.
+3. Build method: **Web editor** (cole o conteúdo do `docker-compose.yml` do repo)
+   ou **Repository** apontando para `https://github.com/reynario/leads_allka` no path `docker-compose.yml`.
+4. Em **Environment variables** (no próprio Portainer), adicione cada variável do `.env`
+   (`DATABASE_URL`, `OPENAI_API_KEY`, `META_ACCESS_TOKEN`, `APIFY_TOKEN`, `BITRIX_WEBHOOK_URL`,
+   `ADMIN_TOKEN`, etc.). O `docker-compose.yml` usa `${VAR}` para puxá-las.
+5. **Deploy the stack**.
+
+Na primeira execução, o `entrypoint.sh` roda `alembic upgrade head` e cria o
+schema `leads` no Supabase (sem mexer no `public` que pertence ao `ia_allka`).
+
+**Atualizar a imagem depois de novos commits:** force pull no Portainer
+(Stack → Editor → "Re-pull image and redeploy") ou `docker service update --image ghcr.io/reynario/leads_allka:latest leads-allka_leads-allka`.
 
 ## Endpoints
 
