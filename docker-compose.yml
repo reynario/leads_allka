@@ -1,0 +1,28 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_PLAYWRIGHT: "false"
+    image: sistema-leads-allka:latest
+    container_name: leads-allka
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - traefik_proxy
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-traefik_proxy}"
+      - "traefik.http.routers.leads-allka.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.leads-allka.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.leads-allka.tls=true"
+      - "traefik.http.routers.leads-allka.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
+      - "traefik.http.services.leads-allka.loadbalancer.server.port=8000"
+
+networks:
+  traefik_proxy:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik_proxy}
