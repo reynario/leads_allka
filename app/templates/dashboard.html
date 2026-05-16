@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Leads Allka{% endblock %}
+
+{% block content %}
+<header style="margin: 1.5rem 0;">
+    <hgroup>
+        <h2>Dashboard</h2>
+        <p>Visão geral da operação de leads</p>
+    </hgroup>
+</header>
+
+{% if request.query_params.get('triggered') %}
+<div class="flash flash-success">Job disparado em background. Acompanhe os leads em <a href="/leads">/leads</a>.</div>
+{% endif %}
+
+<section class="metric-grid">
+    <div class="metric-card">
+        <p class="label">Pendentes</p>
+        <p class="value">{{ by_status.pending }}</p>
+        <p class="sub">Aguardando processamento</p>
+    </div>
+    <div class="metric-card">
+        <p class="label">Em processamento</p>
+        <p class="value">{{ by_status.processing }}</p>
+        <p class="sub">Sendo enriquecidos agora</p>
+    </div>
+    <div class="metric-card">
+        <p class="label">Enviados ao Bitrix</p>
+        <p class="value">{{ by_status.sent_to_bitrix }}</p>
+        <p class="sub">Total acumulado</p>
+    </div>
+    <div class="metric-card">
+        <p class="label">Falhas</p>
+        <p class="value">{{ by_status.failed }}</p>
+        <p class="sub">Aguardando retry</p>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <div class="metric-card">
+        <p class="label">Últimas 24h</p>
+        <p class="value">{{ last_24h.sent }}<span class="muted" style="font-size: 1rem;"> / {{ last_24h.total }}</span></p>
+        <p class="sub">Enviados / processados</p>
+    </div>
+    <div class="metric-card">
+        <p class="label">Últimos 7 dias</p>
+        <p class="value">{{ last_7d.sent }}<span class="muted" style="font-size: 1rem;"> / {{ last_7d.total }}</span></p>
+        <p class="sub">{% if success_rate_7d is not none %}Taxa de sucesso: {{ success_rate_7d }}%{% else %}Sem dados ainda{% endif %}</p>
+    </div>
+    <div class="metric-card">
+        <p class="label">Score médio IA (7d)</p>
+        <p class="value">{{ avg_score if avg_score is not none else "—" }}</p>
+        <p class="sub">Qualificação automática</p>
+    </div>
+    <div class="metric-card">
+        <p class="label">Próxima execução</p>
+        <p class="value" style="font-size: 1.15rem;">{{ next_run | br_datetime if next_run else "—" }}</p>
+        <p class="sub">{% if scheduler_enabled %}Lote de {{ batch_size }} leads{% else %}Scheduler desligado{% endif %}</p>
+    </div>
+</section>
+
+<section style="margin-top: 2rem;">
+    <article>
+        <header>
+            <strong>Ações</strong>
+        </header>
+        <form method="post" action="/run-now" style="display: inline;">
+            <button type="submit">Executar job agora</button>
+        </form>
+        <a href="/leads?status=failed" role="button" class="secondary">Ver falhas</a>
+        <a href="/leads" role="button" class="contrast outline">Todos os leads</a>
+    </article>
+</section>
+{% endblock %}

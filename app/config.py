@@ -21,6 +21,14 @@ class Settings(BaseSettings):
     bitrix_source_id: str = "REDRIVE_IA"
 
     admin_token: str = "changeme"
+    session_secret: str = "change-me-super-secret-please"
+    session_cookie_name: str = "leads_allka_session"
+    session_max_age_seconds: int = 60 * 60 * 8  # 8h
+
+    bootstrap_admin_email: str = ""
+    bootstrap_admin_password: str = ""
+    bootstrap_admin_name: str = "Admin"
+
     scheduler_enabled: bool = True
     playwright_enabled: bool = False
     google_ads_enabled: bool = False

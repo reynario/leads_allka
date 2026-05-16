@@ -1,22 +1,19 @@
+"""REST API para consumo programatico — protegida por header X-Admin-Token."""
+
 from __future__ import annotations
 
 import asyncio
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.database import get_session
+from app.deps import require_admin_token
 from app.repositories import lead_repository as repo
 from app.scheduler import run_daily_job
 
-router = APIRouter(prefix="/leads", tags=["leads"])
-
-
-def _require_admin(x_admin_token: str | None = Header(default=None)) -> None:
-    if not settings.admin_token or x_admin_token != settings.admin_token:
-        raise HTTPException(status_code=401, detail="Invalid or missing X-Admin-Token")
+router = APIRouter(prefix="/api/leads", tags=["api-leads"])
 
 
 def _serialize_lead(lead: Any) -> dict[str, Any]:
@@ -38,7 +35,7 @@ def _serialize_lead(lead: Any) -> dict[str, Any]:
     }
 
 
-@router.get("")
+@router.get("", dependencies=[Depends(require_admin_token)])
 async def list_leads(
     status: str | None = Query(default=None),
     limit: int = Query(default=50, le=200),
@@ -49,7 +46,7 @@ async def list_leads(
     return {"count": len(leads), "items": [_serialize_lead(l) for l in leads]}
 
 
-@router.get("/{lead_id}")
+@router.get("/{lead_id}", dependencies=[Depends(require_admin_token)])
 async def get_lead(lead_id: int, session: AsyncSession = Depends(get_session)) -> dict[str, Any]:
     lead = await repo.get_by_id(session, lead_id)
     if lead is None:
@@ -86,14 +83,13 @@ async def get_lead(lead_id: int, session: AsyncSession = Depends(get_session)) -
     }
 
 
-@router.post("/run-now", dependencies=[Depends(_require_admin)])
+@router.post("/run-now", dependencies=[Depends(require_admin_token)])
 async def trigger_run_now() -> dict[str, str]:
-    """Dispara o job diário fora do horário programado. Roda em background."""
     asyncio.create_task(run_daily_job())
     return {"status": "started"}
 
 
-@router.post("/{lead_id}/retry", dependencies=[Depends(_require_admin)])
+@router.post("/{lead_id}/retry", dependencies=[Depends(require_admin_token)])
 async def retry_lead(lead_id: int, session: AsyncSession = Depends(get_session)) -> dict[str, Any]:
     ok = await repo.reset_for_retry(session, lead_id)
     if not ok:

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Usuários — Leads Allka{% endblock %}
+
+{% block content %}
+<header style="margin: 1.5rem 0;">
+    <hgroup>
+        <h2>Usuários</h2>
+        <p>Gestão de acesso ao sistema</p>
+    </hgroup>
+</header>
+
+<div class="toolbar">
+    <div></div>
+    <a href="/users/new" role="button">+ Novo usuário</a>
+</div>
+
+<figure>
+    <table class="striped compact">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Admin</th>
+                <th>Ativo</th>
+                <th>Último login</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for u in users %}
+            <tr>
+                <td>{{ u.name or '—' }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.is_admin | yesno }}</td>
+                <td>{{ u.is_active | yesno }}</td>
+                <td>{{ u.last_login_at | br_datetime }}</td>
+                <td>
+                    <a href="/users/{{ u.id }}/edit" role="button" class="outline" style="padding: 0.2rem 0.6rem;">Editar</a>
+                    {% if u.id != user.id %}
+                    <form method="post" action="/users/{{ u.id }}/delete" style="display: inline; margin-left: 0.25rem;" onsubmit="return confirm('Remover usuário {{ u.email }}?');">
+                        <button type="submit" class="secondary outline" style="padding: 0.2rem 0.6rem;">Remover</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</figure>
+{% endblock %}

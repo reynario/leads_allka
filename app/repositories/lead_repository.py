@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -138,3 +138,40 @@ async def list_by_status(
         stmt = stmt.where(Lead.status == status)
     result = await session.execute(stmt)
     return list(result.scalars().all())
+
+
+async def count_by_status(session: AsyncSession) -> dict[str, int]:
+    """Conta leads agrupados por status. Retorna dict com todos os status (zero se ausente)."""
+    stmt = select(Lead.status, func.count(Lead.id)).group_by(Lead.status)
+    result = await session.execute(stmt)
+    counts = {row[0]: row[1] for row in result.all()}
+    return {s.value: counts.get(s.value, 0) for s in LeadStatus}
+
+
+async def count_processed_in_window(session: AsyncSession, hours: int) -> dict[str, int]:
+    """Conta leads processados nas ultimas N horas, agrupados por sucesso/falha."""
+    threshold = datetime.now(timezone.utc) - timedelta(hours=hours)
+    stmt = (
+        select(Lead.status, func.count(Lead.id))
+        .where(Lead.processed_at >= threshold)
+        .group_by(Lead.status)
+    )
+    result = await session.execute(stmt)
+    counts = {row[0]: row[1] for row in result.all()}
+    sent = counts.get(LeadStatus.SENT_TO_BITRIX.value, 0)
+    failed = counts.get(LeadStatus.FAILED.value, 0)
+    return {"sent": sent, "failed": failed, "total": sent + failed}
+
+
+async def avg_score_in_window(session: AsyncSession, hours: int) -> float | None:
+    """Score medio da IA nas analises feitas nas ultimas N horas."""
+    threshold = datetime.now(timezone.utc) - timedelta(hours=hours)
+    stmt = (
+        select(func.avg(LeadAnalysis.score))
+        .join(Lead, LeadAnalysis.lead_id == Lead.id)
+        .where(Lead.processed_at >= threshold)
+        .where(LeadAnalysis.score.is_not(None))
+    )
+    result = await session.execute(stmt)
+    value = result.scalar()
+    return float(value) if value is not None else None

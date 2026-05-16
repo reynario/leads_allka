@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Lead #{{ lead.id }} — Leads Allka{% endblock %}
+
+{% block content %}
+<header style="margin: 1.5rem 0;">
+    <p><a href="/leads">← Voltar para a lista</a></p>
+    <hgroup>
+        <h2>{{ lead.company_name or 'Lead #' ~ lead.id }}</h2>
+        <p>
+            <span class="status-badge status-{{ lead.status }}">{{ lead.status | status_label }}</span>
+            {% if lead.bitrix_id %}<span class="muted">· Bitrix #{{ lead.bitrix_id }}</span>{% endif %}
+        </p>
+    </hgroup>
+</header>
+
+{% if lead.error_message %}
+<article class="flash flash-error" style="margin-bottom: 1rem;">
+    <strong>Último erro:</strong><br>
+    <small>{{ lead.error_message }}</small>
+    <br><br>
+    <form method="post" action="/leads/{{ lead.id }}/retry" style="margin: 0;">
+        <button type="submit" class="secondary">Reprocessar lead</button>
+    </form>
+</article>
+{% endif %}
+
+<article>
+    <header><strong>Dados do lead</strong></header>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1.5rem;">
+        <div><strong>Redrive ID:</strong> {{ lead.redrive_id }}</div>
+        <div><strong>Telefone:</strong> {{ lead.phone or '—' }}</div>
+        <div><strong>Site:</strong> {% if lead.website %}<a href="{{ lead.website }}" target="_blank" rel="noopener">{{ lead.website }}</a>{% else %}—{% endif %}</div>
+        <div><strong>Instagram:</strong> {{ lead.instagram or '—' }}</div>
+        <div><strong>Cidade:</strong> {{ lead.city or '—' }}</div>
+        <div><strong>Segmento:</strong> {{ lead.segment or '—' }}</div>
+        <div><strong>Criado em:</strong> {{ lead.created_at | br_datetime }}</div>
+        <div><strong>Processado em:</strong> {{ lead.processed_at | br_datetime }}</div>
+        <div><strong>Tentativas:</strong> {{ lead.retry_count }}</div>
+    </div>
+</article>
+
+{% if analysis %}
+<article>
+    <header><strong>Análise IA</strong>{% if analysis.score is not none %} · <span class="muted">score {{ analysis.score }}</span>{% endif %}</header>
+    {% if analysis.ai_summary %}<p><strong>Resumo:</strong> {{ analysis.ai_summary }}</p>{% endif %}
+    {% if analysis.ai_pains %}<p><strong>Dores:</strong> {{ analysis.ai_pains }}</p>{% endif %}
+    {% if analysis.ai_opportunity %}<p><strong>Oportunidade:</strong> {{ analysis.ai_opportunity }}</p>{% endif %}
+    {% if analysis.ai_message %}
+    <p><strong>Sugestão de abordagem:</strong></p>
+    <blockquote>{{ analysis.ai_message }}</blockquote>
+    {% endif %}
+</article>
+
+<details class="analysis-section">
+    <summary><strong>Análise do site</strong></summary>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1.5rem; padding: 0.5rem 0;">
+        <div>Site ativo: {{ analysis.site_active | yesno }}</div>
+        <div>WhatsApp: {{ analysis.has_whatsapp | yesno }}</div>
+        <div>Formulário: {{ analysis.has_form | yesno }}</div>
+        <div>Meta Pixel: {{ analysis.has_meta_pixel | yesno }}</div>
+        <div>Google Tag: {{ analysis.has_google_tag | yesno }}</div>
+        <div>GTM: {{ analysis.has_gtm | yesno }}</div>
+    </div>
+</details>
+
+<details class="analysis-section">
+    <summary><strong>Instagram</strong></summary>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1.5rem; padding: 0.5rem 0;">
+        <div>Perfil ativo: {{ analysis.instagram_active | yesno }}</div>
+        <div>Último post: {{ analysis.last_post_date | br_datetime }}</div>
+        <div>Frequência: {{ analysis.posting_frequency or '—' }}</div>
+        <div>Melhor post: {% if analysis.best_post_url %}<a href="{{ analysis.best_post_url }}" target="_blank">abrir</a>{% else %}—{% endif %}</div>
+        <div>Curtidas (melhor): {{ analysis.best_post_likes or '—' }}</div>
+        <div>Comentários (melhor): {{ analysis.best_post_comments or '—' }}</div>
+    </div>
+</details>
+
+<details class="analysis-section">
+    <summary><strong>Anúncios</strong></summary>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1.5rem; padding: 0.5rem 0;">
+        <div>Meta Ads: {{ analysis.has_meta_ads | yesno }}</div>
+        <div>Google Ads: {{ analysis.has_google_ads | yesno }}</div>
+        <div>Print Meta: {% if analysis.meta_ads_print %}<a href="{{ analysis.meta_ads_print }}" target="_blank">abrir</a>{% else %}—{% endif %}</div>
+        <div>Print Google: {% if analysis.google_ads_print %}<a href="{{ analysis.google_ads_print }}" target="_blank">abrir</a>{% else %}—{% endif %}</div>
+    </div>
+</details>
+
+{% if analysis.raw_payload %}
+<details class="analysis-section">
+    <summary><strong>Payload bruto (debug)</strong></summary>
+    <pre style="max-height: 400px; overflow: auto; font-size: 0.78rem;">{{ analysis.raw_payload | tojson(indent=2) }}</pre>
+</details>
+{% endif %}
+{% else %}
+<article>
+    <p class="muted">Nenhuma análise registrada para este lead ainda.</p>
+</article>
+{% endif %}
+{% endblock %}

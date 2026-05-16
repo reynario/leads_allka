@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Leads — Leads Allka{% endblock %}
+
+{% block content %}
+<header style="margin: 1.5rem 0;">
+    <hgroup>
+        <h2>Leads</h2>
+        <p>{{ leads | length }} leads mostrados (limite 100)</p>
+    </hgroup>
+</header>
+
+<div class="toolbar">
+    <div class="filters">
+        <a href="/leads" class="{{ 'active' if not current_status }}">Todos</a>
+        <a href="/leads?status=pending" class="{{ 'active' if current_status == 'pending' }}">Pendentes</a>
+        <a href="/leads?status=processing" class="{{ 'active' if current_status == 'processing' }}">Processando</a>
+        <a href="/leads?status=sent_to_bitrix" class="{{ 'active' if current_status == 'sent_to_bitrix' }}">Enviados</a>
+        <a href="/leads?status=failed" class="{{ 'active' if current_status == 'failed' }}">Falhas</a>
+    </div>
+    <form method="post" action="/run-now">
+        <button type="submit" class="secondary">Executar job agora</button>
+    </form>
+</div>
+
+{% if leads %}
+<figure>
+    <table class="striped compact">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Empresa</th>
+                <th>Cidade</th>
+                <th>Status</th>
+                <th>Score</th>
+                <th>Bitrix</th>
+                <th>Processado em</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for lead in leads %}
+            <tr>
+                <td>{{ lead.id }}</td>
+                <td>
+                    <strong>{{ lead.company_name or '—' }}</strong>
+                    {% if lead.segment %}<br><small class="muted">{{ lead.segment }}</small>{% endif %}
+                </td>
+                <td>{{ lead.city or '—' }}</td>
+                <td><span class="status-badge status-{{ lead.status }}">{{ lead.status | status_label }}</span></td>
+                <td>{{ lead.analysis.score if lead.analysis and lead.analysis.score is not none else '—' }}</td>
+                <td>{{ lead.bitrix_id or '—' }}</td>
+                <td>{{ lead.processed_at | br_datetime }}</td>
+                <td><a href="/leads/{{ lead.id }}" role="button" class="outline" style="padding: 0.2rem 0.6rem;">Ver</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</figure>
+{% else %}
+<article>
+    <p class="muted">Nenhum lead encontrado para esse filtro.</p>
+</article>
+{% endif %}
+{% endblock %}

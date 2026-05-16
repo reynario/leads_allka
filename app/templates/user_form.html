@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if target else "Novo" }} usuário — Leads Allka{% endblock %}
+
+{% block content %}
+<header style="margin: 1.5rem 0;">
+    <p><a href="/users">← Voltar</a></p>
+    <h2>{{ "Editar usuário" if target else "Novo usuário" }}</h2>
+</header>
+
+{% if error %}
+<div class="flash flash-error">{{ error }}</div>
+{% endif %}
+
+<article style="max-width: 540px;">
+    <form method="post" action="{{ '/users/' ~ target.id ~ '/edit' if target else '/users/new' }}">
+        <label for="email">
+            E-mail
+            <input type="email" id="email" name="email" value="{{ target.email if target else '' }}"
+                   {% if target %}disabled{% endif %} required>
+            {% if target %}<small class="muted">E-mail não pode ser alterado depois do cadastro.</small>{% endif %}
+        </label>
+
+        <label for="name">
+            Nome
+            <input type="text" id="name" name="name" value="{{ target.name if target else '' }}">
+        </label>
+
+        <label for="password">
+            {{ "Nova senha (deixe em branco para não alterar)" if target else "Senha" }}
+            <input type="password" id="password" name="password" {% if not target %}required{% endif %} autocomplete="new-password">
+        </label>
+
+        <fieldset>
+            <label>
+                <input type="checkbox" name="is_admin" value="1"
+                    {% if target and target.is_admin %}checked{% endif %}>
+                É administrador
+            </label>
+            {% if target %}
+            <label>
+                <input type="checkbox" name="is_active" value="1"
+                    {% if target.is_active %}checked{% endif %}>
+                Conta ativa
+            </label>
+            {% endif %}
+        </fieldset>
+
+        <button type="submit">{{ "Salvar alterações" if target else "Criar usuário" }}</button>
+        <a href="/users" role="button" class="secondary outline">Cancelar</a>
+    </form>
+</article>
+{% endblock %}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Leads Allka{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        :root {
+            --pico-font-size: 95%;
+        }
+        body {
+            padding-bottom: 3rem;
+        }
+        .nav-brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .metric-card {
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: var(--pico-border-radius);
+            background: var(--pico-card-background-color);
+        }
+        .metric-card .label {
+            font-size: 0.85rem;
+            color: var(--pico-muted-color);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .metric-card .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0.25rem 0 0;
+            line-height: 1.1;
+        }
+        .metric-card .sub {
+            font-size: 0.8rem;
+            color: var(--pico-muted-color);
+            margin: 0.25rem 0 0;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-pending { background: #fff8e0; color: #8a6d00; }
+        .status-processing { background: #e0eaff; color: #1a3a8a; }
+        .status-completed { background: #d6f5dc; color: #1f6a2a; }
+        .status-sent_to_bitrix { background: #c9f7c9; color: #14591d; }
+        .status-failed { background: #ffe1e1; color: #8a1a1a; }
+        table.compact td, table.compact th {
+            padding: 0.55rem 0.7rem;
+            font-size: 0.92rem;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .toolbar form { display: inline; margin: 0; }
+        .filters a {
+            margin-right: 0.5rem;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .filters a.active { font-weight: 700; text-decoration: underline; }
+        .muted { color: var(--pico-muted-color); }
+        details.analysis-section { margin-bottom: 1rem; }
+        .flash {
+            padding: 0.75rem 1rem;
+            border-radius: var(--pico-border-radius);
+            margin-bottom: 1rem;
+        }
+        .flash-success { background: #d6f5dc; color: #1f6a2a; }
+        .flash-error { background: #ffe1e1; color: #8a1a1a; }
+    </style>
+</head>
+<body>
+    {% if user %}
+    <nav class="container-fluid" style="border-bottom: 1px solid var(--pico-muted-border-color);">
+        <ul>
+            <li><a href="/dashboard" class="nav-brand contrast">Leads Allka</a></li>
+        </ul>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/leads">Leads</a></li>
+            {% if user.is_admin %}
+            <li><a href="/users">Usuários</a></li>
+            {% endif %}
+            <li>
+                <details class="dropdown">
+                    <summary>{{ user.name or user.email }}</summary>
+                    <ul dir="rtl">
+                        <li class="muted" style="padding: 0.5rem 1rem; font-size: 0.85rem;">{{ user.email }}</li>
+                        <li>
+                            <form method="post" action="/logout" style="margin: 0;">
+                                <button type="submit" class="contrast outline" style="width: 100%;">Sair</button>
+                            </form>
+                        </li>
+                    </ul>
+                </details>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
