@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from logging.config import fileConfig
+from uuid import uuid4
 
 from alembic import context
 from sqlalchemy.engine import Connection
@@ -12,7 +13,7 @@ from sqlalchemy.pool import NullPool
 
 from app.config import settings
 from app.database import Base
-from app.models import Lead, LeadAnalysis  # noqa: F401 — registra modelos no Base.metadata
+from app.models import Lead, LeadAnalysis, User  # noqa: F401 — registra modelos no Base.metadata
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)
@@ -48,14 +49,16 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_migrations_online() -> None:
-    # Criamos uma engine nova aqui (NullPool) — connect_args desabilita
-    # prepared statements para compatibilidade com Supabase Transaction Pooler.
+    # NullPool + nomes unicos de prepared statement: obrigatorio com Supabase
+    # Transaction Pooler (PgBouncer transaction mode reutiliza conexoes backend
+    # e quebra com nomes default __asyncpg_stmt_N__).
     connectable = create_async_engine(
         settings.database_url,
         poolclass=NullPool,
         connect_args={
             "statement_cache_size": 0,
             "prepared_statement_cache_size": 0,
+            "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4().hex}__",
         },
     )
     async with connectable.connect() as connection:
