@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     apify_instagram_actor: str = "apify/instagram-profile-scraper"
 
     redrive_api_token: str = ""
+    redrive_login: str = ""
+    redrive_password: str = ""
     redrive_base_url: str = "https://api.redrive.com.br"
 
     bitrix_webhook_url: str = ""
