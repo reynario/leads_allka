@@ -149,13 +149,34 @@ class RedriveClient:
     def _map_row(item: dict[str, Any]) -> dict[str, Any]:
         """Mapeia contato do Redrive para o schema da tabela leads.leads.
 
-        Campos CRM do Redrive: id, firstname, lastname, company, phone,
-        mobilephone, email, city, uf, zipcode, address, number, district,
-        date_of_birth, tags, ...
+        Campos reais da API: id, firstname, lastname, company, phone,
+        email, city, uf, cnae, biography, tags (lista), website, ...
         """
         first = item.get("firstname") or ""
         last = item.get("lastname") or ""
         full_name = f"{first} {last}".strip() or item.get("name") or item.get("nome")
+
+        # tags pode ser lista ["ig:handle", "..."] ou string "ig:handle,..."
+        raw_tags = item.get("tags") or []
+        if isinstance(raw_tags, list):
+            tags_str = ",".join(raw_tags)
+        else:
+            tags_str = str(raw_tags)
+
+        # segment: preferência por biography (ex: "AGENCIAS DE PUBLICIDADE"),
+        # fallback para cnae, depois uf.
+        segment = (
+            item.get("segment")
+            or item.get("segmento")
+            or item.get("biography")
+            or item.get("cnae")
+            or item.get("category")
+            or item.get("uf")
+            or ""
+        )
+        # cnae vem como "7311400 - AGENCIAS DE PUBLICIDADE" — usa só a descrição
+        if " - " in segment:
+            segment = segment.split(" - ", 1)[1]
 
         return {
             "redrive_id": str(
@@ -172,7 +193,7 @@ class RedriveClient:
             "instagram": (
                 item.get("instagram")
                 or item.get("instagram_handle")
-                or _extract_instagram(item.get("tags") or "")
+                or _extract_instagram(tags_str)
                 or ""
             ),
             "phone": (
@@ -183,13 +204,7 @@ class RedriveClient:
                 or ""
             ),
             "city": item.get("city") or item.get("cidade") or "",
-            "segment": (
-                item.get("segment")
-                or item.get("segmento")
-                or item.get("category")
-                or item.get("uf")
-                or ""
-            ),
+            "segment": segment,
         }
 
 
